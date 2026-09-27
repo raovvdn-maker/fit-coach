@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCoach AI - Personal Fitness & Workout Coach</title>
+<!-- Google Fonts & Material Symbols -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+
+<style>
+  :root {
+    --accent: #10b981;
+    --accent-dark: #059669;
+    --accent-glow: rgba(16, 185, 129, 0.2);
+    --bg-main: #f8fafc;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+    --user-msg-bg: linear-gradient(135deg, #059669, #10b981);
+    --agent-msg-bg: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    z-index: 10;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .brand-icon {
+    background: var(--accent);
+    color: #ffffff;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .brand-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+  }
+
+  .brand-tag {
+    font-size: 0.75rem;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #10b981;
+  }
+
+  /* Chat Container */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    max-width: 840px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  /* Welcome Card */
+  .welcome-card {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    border: 1px solid #334155;
+    margin-bottom: 0.5rem;
+  }
+
+  .welcome-card h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.35rem;
+    color: #34d399;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .welcome-card p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+
+  /* Messages & Dialogue Layout */
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 88%;
+    animation: fadeIn 0.25s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+
+  .msg.agent {
+    align-self: flex-start;
+    align-items: flex-start;
+  }
+
+  .sender-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .bubble {
+    padding: 0.85rem 1.15rem;
+    border-radius: 16px;
+    font-size: 0.98rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg.user .bubble {
+    background: var(--user-msg-bg);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  .msg.agent .bubble {
+    background: var(--agent-msg-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Rich A2UI Standalone Cards */
+  .bubble.rich {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100%;
+    white-space: normal;
+    box-shadow: none !important;
+  }
+
+  /* Prompt Suggestions Row */
+  .prompt-row {
+    max-width: 840px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .prompt-chip {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 0.5rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.825rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .prompt-chip:hover {
+    background: #f0fdf4;
+    border-color: var(--accent);
+    color: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--accent-glow);
+  }
+
+  /* Form & Input Bar */
+  .input-container {
+    background: #ffffff;
+    border-top: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem 1rem 1.5rem;
+  }
+
+  form {
+    max-width: 840px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  input {
+    flex: 1;
+    padding: 0.85rem 1.15rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 0.98rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  button {
+    padding: 0.85rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--user-msg-bg);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  button:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+  }
+
+  /* Animated Typing Indicator */
+  .typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.4rem 0.2rem;
+  }
+
+  .typing-dots span {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: typingPulse 1.2s infinite ease-in-out;
+  }
+
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingPulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* --- A2UI component styles (Card, Column, Row, Text, Divider, List, Image, Icon) --- */
+  .a2card {
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.15rem;
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(0,0,0,.05);
+    max-width: 100%;
+  }
+  .a2card + .a2card, .a2col > .a2card { margin-top: 0.75rem; }
+  .a2col { display: flex; flex-direction: column; gap: 0.5rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.45; }
+  .a2text.a2-h1 { font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+  .a2text.a2-h2 { font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+  .a2text.a2-h3 { font-size: 1.05rem; font-weight: 600; color: #334155; }
+  .a2text.a2-h4 { font-size: 0.95rem; font-weight: 600; color: #475569; }
+  .a2text.a2-caption { font-size: 0.825rem; color: #64748b; }
+  .a2divider { border: none; border-top: 1px solid var(--border-color); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border-color); margin-top: 0.5rem; }
+  .a2video { max-width: 100%; width: 100%; border-radius: 12px; display: block; border: 1px solid var(--border-color); margin-top: 0.75rem; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-size: 1.25rem; line-height: 1; vertical-align: middle; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div>
+      <span class="brand-title">FitCoach AI</span>
+      <span class="brand-tag">PRO</span>
+    </div>
+  </div>
+  <div class="status-badge">
+    <span class="status-dot"></span>
+    Active Assistant
+  </div>
+</header>
+
+<div id="log">
+  <div class="welcome-card">
+    <h2>🏋️ Welcome to FitCoach AI</h2>
+    <p>Your intelligent fitness & training coach. Ask for personalized workout routines, 1RM strength calculations, exercise posture photos, or dietary motivation.</p>
+  </div>
+</div>
+
+<!-- Example Prompts Row -->
+<div class="prompt-row">
+  <button class="prompt-chip" data-prompt="Generate a chest & triceps workout routine with exercise cards">
+    🏋️ Chest & Triceps Routine
+  </button>
+  <button class="prompt-chip" data-prompt="Generate a short video demonstration for jumping jacks exercise">
+    🎥 Jumping Jacks Video
+  </button>
+  <button class="prompt-chip" data-prompt="Show me a photo illustration for proper squat posture">
+    📸 Squat Posture Photo
+  </button>
+  <button class="prompt-chip" data-prompt="Calculate my 1RM bench press for 185 lbs at 6 reps and target heart rate">
+    ⚡ Calculate 1RM & HR Zones
+  </button>
+</div>
+
+<div class="input-container">
+  <form id="form">
+    <input id="input" placeholder="Ask FitCoach anything about your workout or goals…" autocomplete="off" autofocus>
+    <button type="submit">
+      Send
+      <span class="material-symbols-outlined" style="font-size:1.1rem; color:#fff;">send</span>
+    </button>
+  </form>
+</div>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function getTimeStr() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function bubble(who) {
+  const m = el("div", "msg " + who);
+  const label = el("div", "sender-label");
+  label.textContent = who === "user" ? `You • ${getTimeStr()}` : `⚡ FitCoach AI • ${getTimeStr()}`;
+  m.appendChild(label);
+
+  const b = el("div", "bubble");
+  m.appendChild(b);
+  log.appendChild(m);
+  log.scrollTop = log.scrollHeight;
+  return b;
+}
+
+/* ----------------------------------------------------------------------------
+ * A2UI mini-renderer (v0.8 Basic Catalog subset).
+ * Renders Card / Column / Row / Text / Divider / List / Image / Icon.
+ * -------------------------------------------------------------------------- */
+
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(props) {
+  const ids = [];
+  if (props && typeof props.child === "string") ids.push(props.child);
+  const ch = props && props.children;
+  if (ch && Array.isArray(ch.explicitList)) for (const c of ch.explicitList) if (typeof c === "string") ids.push(c);
+  return ids;
+}
+
+function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
+
+function buildNode(id, comps, seen) {
+  if (!id || seen.has(id)) return null;
+  seen.add(id);
+  const spec = comps[id];
+  if (!spec || typeof spec !== "object") return null;
+  const type = Object.keys(spec)[0];
+  const props = spec[type] || {};
+  const kids = () => childIds(props).map(cid => buildNode(cid, comps, seen)).filter(Boolean);
+
+  switch (type) {
+    case "Card": {
+      const d = el("div", "a2card"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Column":
+    case "List": {
+      const horizontal = type === "List" && props.direction === "horizontal";
+      const d = el("div", horizontal ? "a2row" : "a2col"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Row": {
+      const d = el("div", "a2row" + (props.distribution === "spaceBetween" ? " between" : ""));
+      kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Text": {
+      const t = el("div", "a2text");
+      const hint = String(props.usageHint || "body").toLowerCase();
+      if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
+      else if (hint === "caption") t.classList.add("a2-caption");
+      t.textContent = boundStr(props.text);
+      return t;
+    }
+    case "Divider":
+      return el("hr", "a2divider");
+    case "Image": {
+      const src = boundStr(props.url || props.src);
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+    }
+    case "Icon": {
+      const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
+    }
+    default:
+      return null;
+  }
+}
+
+function renderSurface(messages, container) {
+  const comps = {};
+  const roots = [];
+  for (const m of messages) {
+    if (m.beginRendering && typeof m.beginRendering.root === "string") roots.push(m.beginRendering.root);
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
+  }
+  let rootIds = roots.filter(r => comps[r]);
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) { const node = buildNode(rid, comps, new Set()); if (node) { container.appendChild(node); drew = true; } }
+  return drew;
+}
+
+function flattenText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.component && c.component.Text) out.push(boundStr(c.component.Text.text));
+  }
+  return out.join("\n").trim();
+}
+
+function renderTextWithMedia(container, textStr) {
+  if (!textStr) return;
+  const textDiv = el("div", null, textStr);
+  container.appendChild(textDiv);
+
+  // Auto-detect public media links in text and render playable HTML5 media elements
+  const videoRegex = /(https?:\/\/[^\s"'<>]+\.(?:mp4|webm)(?:\?[^\s"'<>]*)?)/gi;
+  const imageRegex = /(https?:\/\/[^\s"'<>]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s"'<>]*)?)/gi;
+
+  let match;
+  while ((match = videoRegex.exec(textStr)) !== null) {
+    const videoUrl = match[1];
+    const vid = el("video", "a2video");
+    vid.src = videoUrl;
+    vid.controls = true;
+    vid.autoplay = true;
+    vid.loop = true;
+    vid.muted = true;
+    container.appendChild(vid);
+  }
+
+  while ((match = imageRegex.exec(textStr)) !== null) {
+    const imgUrl = match[1];
+    const img = el("img", "a2img");
+    img.src = imgUrl;
+    container.appendChild(img);
+  }
+}
+
+function renderReply(b, parts) {
+  b.textContent = "";
+  const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
+  const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+  const files = parts.filter(p => p && (p.kind === "file" || p.url));
+
+  const textStr = texts.join("\n").trim();
+  if (textStr) renderTextWithMedia(b, textStr);
+
+  for (const f of files) {
+    const url = f.url || f.text;
+    if (url && /\.(mp4|webm)(\?|$)/i.test(url)) {
+      const vid = el("video", "a2video");
+      vid.src = url;
+      vid.controls = true;
+      vid.autoplay = true;
+      vid.loop = true;
+      vid.muted = true;
+      b.appendChild(vid);
+    } else if (url && /\.(png|jpg|jpeg|gif|webp)(\?|$)/i.test(url)) {
+      const img = el("img", "a2img");
+      img.src = url;
+      b.appendChild(img);
+    }
+  }
+
+  if (a2ui.length) {
+    b.classList.add("rich");
+    if (!renderSurface(a2ui, b)) b.appendChild(el("div", null, flattenText(a2ui) || "(no card content)"));
+  }
+  if (!b.childNodes.length) b.textContent = "(no response)";
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendMessage(text) {
+  if (!text) return;
+  bubble("user").textContent = text;
+  input.value = "";
+  const b = bubble("agent");
+  b.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    renderReply(b, data.parts || []);
+  } catch (e) {
+    b.textContent = "Error: " + e.message;
+  }
+}
+
+form.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  sendMessage(input.value.trim());
+});
+
+// Clickable Example Prompts
+document.querySelectorAll(".prompt-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const prompt = chip.getAttribute("data-prompt");
+    sendMessage(prompt);
+  });
+});
+</script>
+</body>
+</html>
