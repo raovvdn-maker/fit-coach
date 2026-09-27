@@ -341,6 +341,49 @@
   .a2divider { border: none; border-top: 1px solid var(--border-color); margin: 0.5rem 0; width: 100%; }
   .a2img { max-width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border-color); margin-top: 0.5rem; }
   .a2video { max-width: 100%; width: 100%; border-radius: 12px; display: block; border: 1px solid var(--border-color); margin-top: 0.75rem; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .media-download-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin-top: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .media-download-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #1e293b;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .media-download-title {
+    word-break: break-all;
+  }
+  .media-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: #ffffff !important;
+    text-decoration: none !important;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-align: center;
+    margin-top: 0.25rem;
+    box-shadow: 0 3px 10px rgba(234, 88, 12, 0.25);
+  }
+  .media-download-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(234, 88, 12, 0.35);
+  }
   .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-size: 1.25rem; line-height: 1; vertical-align: middle; color: var(--accent); }
 </style>
 </head>
@@ -474,7 +517,7 @@ function buildNode(id, comps, seen) {
     case "Image": {
       const src = boundStr(props.url || props.src);
       if (!/^https?:\/\//i.test(src)) return null;
-      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+      return createDownloadCard(src, boundStr(props.alt) || "Exercise Image Asset");
     }
     case "Icon": {
       const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
@@ -482,6 +525,28 @@ function buildNode(id, comps, seen) {
     default:
       return null;
   }
+}
+
+function createDownloadCard(url, label) {
+  const card = el("div", "media-download-card");
+  
+  const info = el("div", "media-download-info");
+  const icon = el("span", "material-symbols-outlined");
+  icon.textContent = "file_download";
+  const title = el("span", "media-download-title", label || "Exercise Multimedia Asset");
+  info.appendChild(icon);
+  info.appendChild(title);
+  
+  const link = el("a", "media-download-btn");
+  link.href = url;
+  link.download = "";
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "📥 Download & View Local File";
+  
+  card.appendChild(info);
+  card.appendChild(link);
+  return card;
 }
 
 function renderSurface(messages, container) {
@@ -517,27 +582,18 @@ function renderTextWithMedia(container, textStr) {
   const textDiv = el("div", null, textStr);
   container.appendChild(textDiv);
 
-  // Auto-detect public media links in text and render playable HTML5 media elements
-  const videoRegex = /(https?:\/\/[^\s"'<>]+\.(?:mp4|webm)(?:\?[^\s"'<>]*)?)/gi;
-  const imageRegex = /(https?:\/\/[^\s"'<>]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s"'<>]*)?)/gi;
+  // Auto-detect public media links in text and render download cards for local system viewing
+  const mediaRegex = /(https?:\/\/[^\s"'<>]+\.(?:mp4|webm|png|jpg|jpeg|gif|webp)(?:\?[^\s"'<>]*)?)/gi;
 
+  const foundUrls = new Set();
   let match;
-  while ((match = videoRegex.exec(textStr)) !== null) {
-    const videoUrl = match[1];
-    const vid = el("video", "a2video");
-    vid.src = videoUrl;
-    vid.controls = true;
-    vid.autoplay = true;
-    vid.loop = true;
-    vid.muted = true;
-    container.appendChild(vid);
-  }
-
-  while ((match = imageRegex.exec(textStr)) !== null) {
-    const imgUrl = match[1];
-    const img = el("img", "a2img");
-    img.src = imgUrl;
-    container.appendChild(img);
+  while ((match = mediaRegex.exec(textStr)) !== null) {
+    const url = match[1];
+    if (!foundUrls.has(url)) {
+      foundUrls.add(url);
+      const filename = url.split("/").pop().split("?")[0] || "exercise_media";
+      container.appendChild(createDownloadCard(url, `Exercise Media Asset (${filename})`));
+    }
   }
 }
 
@@ -552,18 +608,9 @@ function renderReply(b, parts) {
 
   for (const f of files) {
     const url = f.url || f.text;
-    if (url && /\.(mp4|webm)(\?|$)/i.test(url)) {
-      const vid = el("video", "a2video");
-      vid.src = url;
-      vid.controls = true;
-      vid.autoplay = true;
-      vid.loop = true;
-      vid.muted = true;
-      b.appendChild(vid);
-    } else if (url && /\.(png|jpg|jpeg|gif|webp)(\?|$)/i.test(url)) {
-      const img = el("img", "a2img");
-      img.src = url;
-      b.appendChild(img);
+    if (url && /^https?:\/\//i.test(url)) {
+      const filename = url.split("/").pop().split("?")[0] || "media_asset";
+      b.appendChild(createDownloadCard(url, `Exercise File (${filename})`));
     }
   }
 
