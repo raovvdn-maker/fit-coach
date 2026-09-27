@@ -309,14 +309,20 @@ def generate_exercise_video(prompt: str, tool_context: ToolContext) -> str:
     if not video_bytes:
         raise RuntimeError("No video bytes returned from gemini-omni-flash-preview model.")
 
-    # Convert video bytes to GIF for universal inline image rendering
-    gif_bytes = convert_video_bytes_to_gif(video_bytes)
-    if gif_bytes:
-        final_bytes = gif_bytes
-        mime_type = "image/gif"
-        ext = "gif"
+    want_gif = "gif" in prompt.lower() or "animat" in prompt.lower()
+    if want_gif:
+        gif_bytes = convert_video_bytes_to_gif(video_bytes)
+        if gif_bytes:
+            final_bytes = gif_bytes
+            mime_type = "image/gif"
+            ext = "gif"
+        else:
+            final_bytes = video_bytes
+            mime_type = "video/mp4"
+            ext = "mp4"
     else:
         final_bytes = video_bytes
+        mime_type = "video/mp4"
         ext = "mp4"
 
     filename = f"exercise_video_{uuid.uuid4().hex[:8]}.{ext}"

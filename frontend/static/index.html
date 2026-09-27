@@ -527,22 +527,43 @@ function buildNode(id, comps, seen) {
   }
 }
 
-function createDownloadCard(url, label) {
+function createDownloadCard(url, customLabel) {
   const card = el("div", "media-download-card");
   
+  const filename = url.split("/").pop().split("?")[0] || "exercise_media";
+  const ext = filename.split(".").pop().toLowerCase();
+  
+  let mediaType = "Exercise Media File";
+  let iconNameText = "file_download";
+  let btnText = "📥 Download File";
+  
+  if (ext === "mp4" || ext === "webm" || /video/i.test(filename)) {
+    mediaType = "Exercise Demonstration Video (.mp4)";
+    iconNameText = "movie";
+    btnText = "🎥 Download Video File (.mp4)";
+  } else if (ext === "gif" || /gif/i.test(filename)) {
+    mediaType = "Animated Exercise Demonstration (.gif)";
+    iconNameText = "animation";
+    btnText = "🎞️ Download Animated GIF (.gif)";
+  } else if (["jpg", "jpeg", "png", "webp"].includes(ext) || /photo|image/i.test(filename)) {
+    mediaType = "Exercise Posture Photo / Visual";
+    iconNameText = "photo_camera";
+    btnText = "📸 Download Image File";
+  }
+
   const info = el("div", "media-download-info");
   const icon = el("span", "material-symbols-outlined");
-  icon.textContent = "file_download";
-  const title = el("span", "media-download-title", label || "Exercise Multimedia Asset");
+  icon.textContent = iconNameText;
+  const title = el("span", "media-download-title", customLabel || `${mediaType} — ${filename}`);
   info.appendChild(icon);
   info.appendChild(title);
   
   const link = el("a", "media-download-btn");
   link.href = url;
-  link.download = "";
+  link.download = filename;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.textContent = "📥 Download & View Local File";
+  link.textContent = btnText;
   
   card.appendChild(info);
   card.appendChild(link);
@@ -582,8 +603,8 @@ function renderTextWithMedia(container, textStr) {
   const textDiv = el("div", null, textStr);
   container.appendChild(textDiv);
 
-  // Auto-detect public media links in text and render download cards for local system viewing
-  const mediaRegex = /(https?:\/\/[^\s"'<>]+\.(?:mp4|webm|png|jpg|jpeg|gif|webp)(?:\?[^\s"'<>]*)?)/gi;
+  // Auto-detect public media links, video/gif URLs, and GCS storage links in text
+  const mediaRegex = /(https?:\/\/(?:storage\.googleapis\.com\/[^\s"'<>]+|[^\s"'<>]+\.(?:mp4|webm|png|jpg|jpeg|gif|webp)(?:\?[^\s"'<>]*)?))/gi;
 
   const foundUrls = new Set();
   let match;
@@ -591,8 +612,7 @@ function renderTextWithMedia(container, textStr) {
     const url = match[1];
     if (!foundUrls.has(url)) {
       foundUrls.add(url);
-      const filename = url.split("/").pop().split("?")[0] || "exercise_media";
-      container.appendChild(createDownloadCard(url, `Exercise Media Asset (${filename})`));
+      container.appendChild(createDownloadCard(url));
     }
   }
 }
